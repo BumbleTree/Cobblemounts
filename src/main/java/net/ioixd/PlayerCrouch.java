@@ -3,12 +3,12 @@ package net.ioixd;
 import com.cobblemon.mod.common.entity.pokemon.PokemonEntity;
 import net.fabricmc.fabric.api.networking.v1.PacketSender;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
-import net.minecraft.block.Blocks;
 import net.minecraft.entity.Entity;
 import net.minecraft.network.PacketByteBuf;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayNetworkHandler;
 import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.text.Text;
 import net.minecraft.util.math.BlockPos;
 
 public class PlayerCrouch implements ServerPlayNetworking.PlayChannelHandler {
@@ -19,12 +19,15 @@ public class PlayerCrouch implements ServerPlayNetworking.PlayChannelHandler {
         if (vehicle != null && vehicle instanceof PokemonEntity) {
             // Check for two air blocks above the player
             BlockPos playerPos = player.getBlockPos();
-            boolean isTwoAirBlocksAbove = player.getWorld().getBlockState(playerPos.up()).isOf(Blocks.AIR)
-                                          && player.getWorld().getBlockState(playerPos.up(2)).isOf(Blocks.AIR);
+            boolean isTwoAirBlocksAbove = player.getWorld().isAir(playerPos.up()) && player.getWorld().isAir(playerPos.up(2));
 
             if (isTwoAirBlocksAbove) {
+                // Existing logic here
                 PokemonEntity living = (PokemonEntity) vehicle;
                 living.initGoals();
+            } else {
+                // Send a message to the player
+                player.sendMessage(Text.literal("BumbleTree won't let you dismount here or you may suffocate!"), false);
             }
         }
     }
