@@ -20,11 +20,33 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.LocalCapture;
 
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 @Mixin(PlayerEntity.class)
 public class PokemonMovementHandler {
     int ticksInLiquid = 0;
+
+    // Define a set of all glass blocks and panes
+    private static final Set<Block> GLASS_BLOCKS = Set.of(
+        Blocks.GLASS, Blocks.GLASS_PANE,
+        Blocks.WHITE_STAINED_GLASS, Blocks.WHITE_STAINED_GLASS_PANE,
+        Blocks.ORANGE_STAINED_GLASS, Blocks.ORANGE_STAINED_GLASS_PANE,
+        Blocks.MAGENTA_STAINED_GLASS, Blocks.MAGENTA_STAINED_GLASS_PANE,
+        Blocks.LIGHT_BLUE_STAINED_GLASS, Blocks.LIGHT_BLUE_STAINED_GLASS_PANE,
+        Blocks.YELLOW_STAINED_GLASS, Blocks.YELLOW_STAINED_GLASS_PANE,
+        Blocks.LIME_STAINED_GLASS, Blocks.LIME_STAINED_GLASS_PANE,
+        Blocks.PINK_STAINED_GLASS, Blocks.PINK_STAINED_GLASS_PANE,
+        Blocks.GRAY_STAINED_GLASS, Blocks.GRAY_STAINED_GLASS_PANE,
+        Blocks.LIGHT_GRAY_STAINED_GLASS, Blocks.LIGHT_GRAY_STAINED_GLASS_PANE,
+        Blocks.CYAN_STAINED_GLASS, Blocks.CYAN_STAINED_GLASS_PANE,
+        Blocks.PURPLE_STAINED_GLASS, Blocks.PURPLE_STAINED_GLASS_PANE,
+        Blocks.BLUE_STAINED_GLASS, Blocks.BLUE_STAINED_GLASS_PANE,
+        Blocks.BROWN_STAINED_GLASS, Blocks.BROWN_STAINED_GLASS_PANE,
+        Blocks.GREEN_STAINED_GLASS, Blocks.GREEN_STAINED_GLASS_PANE,
+        Blocks.RED_STAINED_GLASS, Blocks.RED_STAINED_GLASS_PANE,
+        Blocks.BLACK_STAINED_GLASS, Blocks.BLACK_STAINED_GLASS_PANE
+    );
 
     @Inject(at = @At("HEAD"), method = "travel", locals = LocalCapture.CAPTURE_FAILHARD)
     private void travel(Vec3d movement, CallbackInfo info) {
@@ -76,15 +98,12 @@ public class PokemonMovementHandler {
                                     animation = EntityPose.FALL_FLYING;
                                     flying = true;
                                     break;
-                                // We will never hit this part but we need to set the values anyways
-                                // to make the compiler happy.
                                 default:
                                     condition = false;
                                     animation = null;
                                     flying = false;
                                     break;
                             }
-                            ;
                             if (condition) {
                                 if (movement.z != 0.0) {
                                     living.updateVelocity(movementSpeed, player.getRotationVector());
@@ -102,17 +121,18 @@ public class PokemonMovementHandler {
                             break;
                     }
                 });
+
                 if (isFlying.get()) {
                     return;
                 }
+
                 if (movement.z > 0.0) {
                     living.travel(player.getRotationVector());
                     BlockPos forwardPos = getBlockPos(living, player);
                     if (!isBlockPosTransparent(forwardPos, world)) {
                         BlockPos upperPos = new BlockPos(forwardPos.getX(), forwardPos.getY() + 1, forwardPos.getZ());
                         if (isBlockPosTransparent(upperPos, world)) {
-                            BlockPos upperUpperPos = new BlockPos(upperPos.getX(), upperPos.getY() + 1,
-                                    upperPos.getZ());
+                            BlockPos upperUpperPos = new BlockPos(upperPos.getX(), upperPos.getY() + 1, upperPos.getZ());
                             if (isBlockPosTransparent(upperUpperPos, world)) {
                                 living.teleport(upperPos.getX(), upperPos.getY(), upperPos.getZ());
                             }
@@ -128,6 +148,12 @@ public class PokemonMovementHandler {
     private static boolean isBlockPosTransparent(BlockPos pos, World world) {
         BlockState state = world.getBlockState(pos);
         Block block = state.getBlock();
+
+        // Check if the block is a glass block or pane
+        if (GLASS_BLOCKS.contains(block)) {
+            return false; // Do not consider glass blocks and panes as transparent for this logic
+        }
+
         return block.isTransparent(state, world, pos) && !(block instanceof FluidBlock);
     }
 
@@ -145,5 +171,4 @@ public class PokemonMovementHandler {
         }
         return forwardPos;
     }
-
 }
